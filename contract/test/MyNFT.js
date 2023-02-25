@@ -2,17 +2,28 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("MyNFT", function () {
-
-    it("isMintEnabled is defaulted to false. It should be true once toggleIsMintEnabled is called", async function () {
+    it("Set isMintEnabled to true. mintNFT should return metadata.imageURI = https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE", async function () {
         const MyNFT = await ethers.getContractFactory("MyNFT");
         const myNFT = await MyNFT.deploy();
         await myNFT.deployed();
 
-        expect(await myNFT.isMintEnabled()).to.be.false;
-
         const toggleIsMintEnabledTx = await myNFT.toggleIsMintEnabled();
         await toggleIsMintEnabledTx.wait();
-        expect(await myNFT.isMintEnabled()).to.be.true;
+
+        const metadata = {
+            name: "Hello Strawberry",
+            description: "Strawberry in Space",
+            imageURI: "https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE"
+        };
+        
+        const mintTx = await myNFT.mintNFT(metadata);
+        await mintTx.wait();
+
+        const totalSupply = await myNFT.totalSupply();
+        const tokenId = totalSupply.toString();
+
+        const result = await myNFT.getNFTMetadata(tokenId);
+        expect(result.imageURI).to.equal("https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE");
     });
 });
 
