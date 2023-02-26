@@ -7,37 +7,30 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /*
       RC721URIStorage is a newer extension of the ERC721 standard that adds a built-in way to store and retrieve metadata associated with each token. This means that the URI (Uniform Resource Identifier) of the metadata for each token is stored on-chain (instead of storing it on a IPFS node services like Pinata), allowing for easier access and retrieval of this data. This means that ERC721URIStorage can simplify the process of managing NFT metadata by removing the need for a separate off-chain storage solution. However, this added functionality comes at the cost of increased gas usage and complexity in the smart contract code.
     */
+
 contract MyNFT is ERC721URIStorage, Ownable {
     bool public isMintEnabled; // defaults to false
-    // address owner;
-    // address public owner;
     uint256 public mintedCount = 0;
     uint256 public mintPrice = 1 ether;
     uint256 public totalSupply;
     uint256 public maxSupply; // set as 5 when deployed. can be modified via setMaxSupply()
-
     mapping(address => bool) private _mintedWallets;
 
-    struct NFTMetadata {
-        string name;
-        string description;
-        string imageURI;
-    }
-
-    mapping(uint256 => NFTMetadata) private _nftMetadata;
+    uint256 public mintWindowStart = 1645862400; // 2023-02-26
+    uint256 public mintWindowEnd = 1678406400; // 2023-03-10
 
     // Limit to contract to only mint 5 NFT
     constructor() ERC721("MyNFT", "MNFT") {
-        //owner = msg.sender;
         maxSupply = 5;
     }
 
     // To ensure the mintNFT function is secure, it is declared as external so that no other functions has access/modify the miniting protocols.
-    function mintNFT(NFTMetadata memory metadata)
+    function mintNFT(string memory tokenUri)
         external
         payable
         returns (uint256)
     {
+        require(block.timestamp >= mintWindowStart && block.timestamp <= mintWindowEnd, "Minting window is closed");
         require(isMintEnabled, "Minting is not enabled");
         require(!_mintedWallets[msg.sender], "Already minted an NFT");
         // require(msg.value == mintPrice, "Wrong value");
@@ -49,8 +42,7 @@ contract MyNFT is ERC721URIStorage, Ownable {
         // mint NFT
         uint256 tokenId = totalSupply;
         _mint(msg.sender, tokenId);
-        _setTokenURI(tokenId, metadata.imageURI);
-        _nftMetadata[tokenId] = metadata;
+        _setTokenURI(tokenId, tokenUri);
 
         return tokenId;
     }
@@ -65,13 +57,16 @@ contract MyNFT is ERC721URIStorage, Ownable {
         maxSupply = maxSupply_;
     }
 
-    // In Solidity, the view keyword is used to declare a function that does not modify the state of the contract and does not create any transactions on the blockchain. The view function is read-only, meaning it only reads data from the contract but does not write any data to the contract. In short, it is a getter function
-    function getNFTMetadata(uint256 tokenId)
-        public
-        view
-        returns (NFTMetadata memory)
-    {
-        require(_exists(tokenId), "Invalid token ID");
-        return _nftMetadata[tokenId];
+      function setMintWindowStart(uint256 startDate) external onlyOwner {
+        mintWindowStart = startDate;
+    }
+
+    function setMintWindowEnd(uint256 endDate) external onlyOwner {
+        mintWindowEnd = endDate;
+    }
+
+    function setMintWindow(uint256 startDate, uint256 endDate) external onlyOwner {
+        mintWindowStart = startDate;
+        mintWindowEnd = endDate;
     }
 }

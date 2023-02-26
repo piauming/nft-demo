@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("MyNFT", function () {
-    it("Set isMintEnabled to true. mintNFT should return metadata.imageURI = https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE", async function () {
+    it("Set isMintEnabled to true. Provide a tokenUri to mintNFT. tokenURI for the tokenId is equals to provided tokenUri", async function () {
         const MyNFT = await ethers.getContractFactory("MyNFT");
         const myNFT = await MyNFT.deploy();
         await myNFT.deployed();
@@ -10,20 +10,16 @@ describe("MyNFT", function () {
         const toggleIsMintEnabledTx = await myNFT.toggleIsMintEnabled();
         await toggleIsMintEnabledTx.wait();
 
-        const metadata = {
-            name: "Hello Strawberry",
-            description: "Strawberry in Space",
-            imageURI: "https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE"
-        };
+        const tokenUri = "https://gateway.pinata.cloud/ipfs/QmXJd4rNQ5qQWQDQoeXBdQofv7aVbaBGTzCEXL3g1gC42k/bulbasaur.json";
         
-        const mintTx = await myNFT.mintNFT(metadata);
+        const mintTx = await myNFT.mintNFT(tokenUri);
         await mintTx.wait();
 
         const totalSupply = await myNFT.totalSupply();
         const tokenId = totalSupply.toString();
 
-        const result = await myNFT.getNFTMetadata(tokenId);
-        expect(result.imageURI).to.equal("https://ipfs.io/ipfs/QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE");
+        const metadataUri = await myNFT.tokenURI(tokenId);
+        expect(metadataUri).to.equal(tokenUri);
     });
 });
 
